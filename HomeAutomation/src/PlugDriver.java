@@ -66,9 +66,9 @@ public class PlugDriver {
 		{
 			try {
 				p.turnOff();
-				Thread.sleep(300);
+				Thread.sleep(100);
 				p.turnOff();
-				Thread.sleep(300);
+				Thread.sleep(100);
 				p.turnOff(); //Just incase dodgy plug doesnt turn off.
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block

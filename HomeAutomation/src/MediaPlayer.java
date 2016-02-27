@@ -1,67 +1,113 @@
 import java.io.IOException;
+import java.util.concurrent.SynchronousQueue;
 
 
 
 
-public class MediaPlayer{
+public class MediaPlayer implements Runnable{
 
-
-	private Process mopidyProcess;
-	private Process clientProcess;
+	private SynchronousQueue<String> outboundQueue;
 	private boolean isPlaying;
+	private String currentPlayInfo = "1";
 
-	public MediaPlayer ()
+	public MediaPlayer (SynchronousQueue<String> outboundQueue)
 	{
-
+		this.outboundQueue = outboundQueue;
 		isPlaying = false;
+		//mopidyProcess  = Runtime.getRuntime().exec("mopidy");
 		try {
-			//mopidyProcess  = Runtime.getRuntime().exec("mopidy");
 			Thread.sleep(5000);
-			clientProcess   = Runtime.getRuntime().exec("mpc -h localhost -p 6600");
-			
-		} catch (Exception e) {
+		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}								
+		}
+		BashHelper.execCommand("mpc -h localhost -p 6600");
+
 	}	
-	
-	
-	public void play(String playlist)
+
+	public void play()
 	{
 		if (!isPlaying)
 		{
-			try {
-				clientProcess   = Runtime.getRuntime().exec("mpc clear");
-				clientProcess   = Runtime.getRuntime().exec("mpc random");
-				String[] playCommand = {"mpc","load",playlist};
-				clientProcess   = Runtime.getRuntime().exec(playCommand);
-				clientProcess.waitFor();
-				clientProcess   = Runtime.getRuntime().exec("mpc play");
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			BashHelper.execCommand("mpc play");
+			isPlaying = true;
+		}
+	}
+
+	public void playPlaylist(String playlist)
+	{
+		if (!isPlaying)
+		{
+			BashHelper.execCommand("mpc clear");
+			BashHelper.execCommand("mpc random");
+			String[] playCommand = {"mpc","load",playlist};
+			BashHelper.execCommand(playCommand);
+			BashHelper.execCommand("mpc play");
+			currentPlayInfo = BashHelper.execCommand("mpc current");
+
 			isPlaying = true;
 		}
 
 
 	}
 
-	public void stop()
+	public void next()
 	{
 		if (isPlaying)
 		{
-			try {
-				clientProcess   = Runtime.getRuntime().exec("mpc pause");
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}	
-			isPlaying = false;
+			BashHelper.execCommand("mpc next");
 		}
 	}
 
 
-	
-	
+	public void previous()
+	{
+		if (isPlaying)
+		{
+			BashHelper.execCommand("mpc prev");
+		}
+	}
+
+	public void pause()
+	{
+		if (isPlaying)
+		{
+			BashHelper.execCommand("mpc pause");
+			isPlaying = false;
+		}
+	}
+
+	private void handlePlayInfo(String newInfo)
+	{
+		//check here for an actual change
+		if (newInfo.compareTo(currentPlayInfo) != 0)
+		{
+			System.out.println("BOOOM!" + newInfo);
+			try {
+				outboundQueue.put(newInfo);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+			currentPlayInfo = newInfo;
+
+		}
+
+
+	}
+
+	@Override
+	public void run() {
+
+		while (true)
+		{
+			handlePlayInfo(BashHelper.execCommand("mpc current"));
+		}
+
+	}
+
+
+
+
 }

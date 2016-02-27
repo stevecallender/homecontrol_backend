@@ -1,3 +1,5 @@
+import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 import java.util.concurrent.SynchronousQueue;
 
 import org.zeromq.*;
@@ -45,15 +47,22 @@ public class FrontendsHandler {
 		public void run() {
 			while (true)
 			{
-				System.out.println("SEE THS ONCE");
-				String inMessage = String.valueOf(inSocket.recv());
-				System.out.println(inMessage);
+				String inMessage = "";
+				try {
+					inMessage = new String(inSocket.recv(),"UTF8");
+				} catch (UnsupportedEncodingException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				System.out.println("request received: " + inMessage);
 				try {
 					inboundQueue.put(inMessage);
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+				inSocket.send("1");
+				System.out.println("response sent");
 			}
 			
 		}
@@ -72,7 +81,7 @@ public class FrontendsHandler {
 
 			this.outboundQueue = outboundQueue;
 			this.outSocket = context.socket(ZMQ.REQ);
-			this.outSocket.connect("tcp://192.168.1.10:5555");
+			this.outSocket.connect("tcp://192.168.1.10:5556");
 			
 		}
 		
@@ -83,11 +92,22 @@ public class FrontendsHandler {
 			{
 				try {
 					String outMessage = ((String)outboundQueue.take());
+					System.out.println("sending request: " + outMessage);
 					outSocket.send(outMessage);
+					String resp = "";
+					try {
+						resp = new String(outSocket.recv(),"UTF8");
+					} catch (UnsupportedEncodingException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					System.out.println("response received: " +resp);
+					
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+		
 				
 			}
 			

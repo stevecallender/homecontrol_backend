@@ -1,3 +1,5 @@
+import java.util.concurrent.SynchronousQueue;
+
 
 public class Launcher{
 
@@ -6,19 +8,26 @@ public class Launcher{
 	 */
 	public static void main(String[] args) {
 		
+		SynchronousQueue<String> inboundQueue = new SynchronousQueue<String>();
+		SynchronousQueue<String> outboundQueue = new SynchronousQueue<String>();
+		
 		NetworkMonitor netMon = new NetworkMonitor();
 		
 		TimeMonitor timeMon = new TimeMonitor();
 		
 		AudioMonitor audioMon = new AudioMonitor();
 		
-		MediaPlayer player = new MediaPlayer();
+		MediaPlayer player = new MediaPlayer(outboundQueue);
 		
-		HomeController main = new HomeController(netMon,timeMon,audioMon, player);
+		HomeController main = new HomeController(inboundQueue,outboundQueue,netMon,timeMon,audioMon, player);
 		
 		
 		
 		//Start threads
+		
+		Thread playerThread = new Thread(player);
+		
+		playerThread.setDaemon(false);
 		
 		Thread monitorThread = new Thread(netMon);
 		
@@ -41,6 +50,8 @@ public class Launcher{
 		monitorThread.start();
 		
 		clockThread.start();
+		
+		playerThread.start();
 		
 		//audioThread.start();
 

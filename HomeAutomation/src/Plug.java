@@ -92,7 +92,7 @@ public class Plug {
 
 			CE.high();
 
-			Thread.sleep(750);
+			Thread.sleep(350);
 
 			CE.low();
 		}
