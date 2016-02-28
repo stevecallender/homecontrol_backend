@@ -2,16 +2,19 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.concurrent.SynchronousQueue;
 
 
 public class TimeMonitor implements Runnable{
 
 
 	private ArrayList<TimeObserver> observers;
+	SynchronousQueue<String> outboundQueue;
 
-	public TimeMonitor()
+	public TimeMonitor(SynchronousQueue<String> outboundQueue)
 	{
 		observers = new ArrayList<TimeObserver>();
+		this.outboundQueue = outboundQueue;
 	}
 
 
@@ -42,6 +45,13 @@ public class TimeMonitor implements Runnable{
 			int hour = Integer.valueOf((hourFormatter.format(date))).intValue();
 
 			int min = Integer.valueOf((minFormatter.format(date))).intValue();
+			
+			try {
+				outboundQueue.put("4"+ day + " " + hour +":" + min);
+			} catch (InterruptedException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 
 			//System.out.println("TimeMonitor\t: Current Day:" + day + ", Hour: " + hour +", Minute: " +min);
 

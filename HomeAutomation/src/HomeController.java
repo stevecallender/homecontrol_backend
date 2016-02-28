@@ -21,25 +21,24 @@ public class HomeController implements NetworkObserver,TimeObserver, ClapObserve
 	private PlugDriver plugDriver;
 	private MediaPlayer player;
 	private boolean shouldReact;
-	
+
 	private SynchronousQueue<String> inboundQueue = new SynchronousQueue<String>();
-	private SynchronousQueue<String> playerRequestsQueue = new SynchronousQueue<String>();
 	private SynchronousQueue<String> outboundQueue = new SynchronousQueue<String>();
 
-	
+
 	public HomeController(SynchronousQueue<String> inboundQueue,
-						  SynchronousQueue<String> outboundQueue,
-						  NetworkMonitor netMonitor,
-						  TimeMonitor timeMonitor,
-						  AudioMonitor audioMonitor,
-						  MediaPlayer player)
+			SynchronousQueue<String> outboundQueue,
+			NetworkMonitor netMonitor,
+			TimeMonitor timeMonitor,
+			AudioMonitor audioMonitor,
+			MediaPlayer player)
 	{
 		this.inboundQueue = inboundQueue;
 		this.outboundQueue = outboundQueue;
 		interestedDevices = new ArrayList<Device>();
 		interestedDevices.add(new Device("EmmasPhone", "b4:18:d1:d3:35:4e"));
 		interestedDevices.add(new Device("StevesPhone", "1c:1a:c0:22:23:e7"));
-		
+
 		plugDriver = new PlugDriver();
 		shouldReact = false;
 		timeMonitor.subscribeMeToUpdates(this);
@@ -47,10 +46,10 @@ public class HomeController implements NetworkObserver,TimeObserver, ClapObserve
 		this.player = player;
 		BluetoothManager.connect();
 		//audioMonitor.subscribeMeToUpdates(this);
-		
-		
+
+
 		new FrontendsHandler(inboundQueue, outboundQueue);
-		
+
 	}
 
 	@Override
@@ -59,11 +58,18 @@ public class HomeController implements NetworkObserver,TimeObserver, ClapObserve
 		interestedDevices.get(interestedDevices.indexOf(d)).isConnected = true;
 		if (shouldReact){
 			plugDriver.allOn();
+			try {
+				outboundQueue.put("2lightsOn");
+				outboundQueue.put("3play");
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			BluetoothManager.connect();
 			player.playPlaylist("Classical");
 			shouldReact = false;
 		}
-		
+
 	}
 
 	@Override
@@ -73,6 +79,13 @@ public class HomeController implements NetworkObserver,TimeObserver, ClapObserve
 		if (!anyInterestedConnected())
 		{
 			plugDriver.allOff();
+			try {
+				outboundQueue.put("2lightsOff");
+				outboundQueue.put("3play");
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			player.pause();
 			shouldReact = true;
 		}
@@ -82,33 +95,33 @@ public class HomeController implements NetworkObserver,TimeObserver, ClapObserve
 	public ArrayList<Device> getInterestedDevices() {
 		return interestedDevices;
 	}
-	
+
 	private boolean allInterestedConnected()
 	{
 		boolean allConnected = true;
-		
+
 		for (Device d : interestedDevices)
 		{
 			if (!d.isConnected)
 				allConnected = false;
 		}
-		
+
 		return allConnected;
-		
+
 	}
-	
+
 	private boolean anyInterestedConnected()
 	{
 		boolean anyConnected = false;
-		
+
 		for (Device d : interestedDevices)
 		{
 			if (d.isConnected)
 				anyConnected = true;
 		}
-		
+
 		return anyConnected;
-		
+
 	}
 
 	@Override
@@ -120,8 +133,16 @@ public class HomeController implements NetworkObserver,TimeObserver, ClapObserve
 			BluetoothManager.connect();
 			player.playPlaylist("Your Coffee Break (by spotify_uk_)");
 			plugDriver.allOn();
+			try {
+				outboundQueue.put("2lightsOn");
+				outboundQueue.put("3play");
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
 		}
-		
+
 	}
 
 	@Override
@@ -131,7 +152,7 @@ public class HomeController implements NetworkObserver,TimeObserver, ClapObserve
 			System.out.println("HomeController\t: GOOD EVENING!");
 			shouldReact = true;
 		}
-		
+
 	}
 
 	@Override
@@ -140,6 +161,12 @@ public class HomeController implements NetworkObserver,TimeObserver, ClapObserve
 		{
 			System.out.println("HomeController\t: GOODBYE!");
 			plugDriver.allOff();
+			try {
+				outboundQueue.put("2lightsOff");
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			shouldReact = false;
 			player.pause();
 		}
@@ -149,7 +176,7 @@ public class HomeController implements NetworkObserver,TimeObserver, ClapObserve
 	public void clapDetected() {
 		plugDriver.toggleAll();
 	}
-	
+
 
 	public void run()
 	{
@@ -157,29 +184,48 @@ public class HomeController implements NetworkObserver,TimeObserver, ClapObserve
 		{
 			try {
 				String msg = inboundQueue.take();
-				
-				System.out.println(msg);
-				
+
+				//System.out.println(msg);
+
 				if (msg.equalsIgnoreCase("play"))
+				{
 					player.play();
+					outboundQueue.put("3play");
+				}
 				else if (msg.equalsIgnoreCase("pause"))
+				{
 					player.pause();
+					outboundQueue.put("3pause");
+				}
 				else if (msg.equalsIgnoreCase("next"))
+				{
 					player.next();
+					outboundQueue.put("3play");
+				}
 				else if (msg.equalsIgnoreCase("prev"))
+				{
 					player.previous();
+					outboundQueue.put("3play");
+				}
 				else if (msg.equalsIgnoreCase("lightsOn"))
+				{
 					plugDriver.allOn();
+					outboundQueue.put("2lightsOn");
+				}
 				else if (msg.equalsIgnoreCase("lightsOff"))
+				{
 					plugDriver.allOff();
-				
-			} catch (InterruptedException e) {
+					outboundQueue.put("2lightsOff");
+
+				}
+
+			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			
+
 		}
-		
+
 	}
 
 }

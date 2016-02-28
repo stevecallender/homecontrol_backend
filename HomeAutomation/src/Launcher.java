@@ -13,7 +13,7 @@ public class Launcher{
 		
 		NetworkMonitor netMon = new NetworkMonitor();
 		
-		TimeMonitor timeMon = new TimeMonitor();
+		TimeMonitor timeMon = new TimeMonitor(outboundQueue);
 		
 		AudioMonitor audioMon = new AudioMonitor();
 		

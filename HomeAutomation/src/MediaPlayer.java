@@ -36,6 +36,7 @@ public class MediaPlayer implements Runnable{
 
 	public void playPlaylist(String playlist)
 	{
+		System.out.println("MediaPlayer\t: Starting playlist: " +playlist);
 		if (!isPlaying)
 		{
 			BashHelper.execCommand("mpc clear");
@@ -48,14 +49,20 @@ public class MediaPlayer implements Runnable{
 			isPlaying = true;
 		}
 
-
 	}
+	
 
 	public void next()
 	{
 		if (isPlaying)
 		{
 			BashHelper.execCommand("mpc next");
+		}
+		else
+		{
+			BashHelper.execCommand("mpc play");
+			BashHelper.execCommand("mpc next");
+			isPlaying = true;
 		}
 	}
 
@@ -65,6 +72,12 @@ public class MediaPlayer implements Runnable{
 		if (isPlaying)
 		{
 			BashHelper.execCommand("mpc prev");
+		}
+		else
+		{
+			BashHelper.execCommand("mpc play");
+			BashHelper.execCommand("mpc prev");
+			isPlaying = true;
 		}
 	}
 
@@ -82,9 +95,8 @@ public class MediaPlayer implements Runnable{
 		//check here for an actual change
 		if (newInfo.compareTo(currentPlayInfo) != 0)
 		{
-			System.out.println("BOOOM!" + newInfo);
 			try {
-				outboundQueue.put(newInfo);
+				outboundQueue.put("1"+newInfo);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
